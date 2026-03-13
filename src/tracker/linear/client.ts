@@ -21,10 +21,6 @@ interface IssuesResponse {
   };
 }
 
-interface NodesResponse {
-  nodes: Array<Record<string, any> | null>;
-}
-
 // ─── LinearClient ───
 
 export class LinearClient implements TrackerAdapter {
@@ -97,11 +93,11 @@ export class LinearClient implements TrackerAdapter {
 
     if (issueIds.length === 0) return result;
 
-    const data = await this.graphql<NodesResponse>(ISSUES_BY_IDS_QUERY, {
+    const data = await this.graphql<IssuesResponse>(ISSUES_BY_IDS_QUERY, {
       ids: issueIds,
     });
 
-    for (const node of data.nodes) {
+    for (const node of data.issues.nodes) {
       if (node && node.id) {
         result.set(node.id, {
           id: node.id,

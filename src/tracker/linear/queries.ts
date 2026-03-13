@@ -56,8 +56,8 @@ export const CANDIDATE_ISSUES_QUERY = /* GraphQL */ `
  */
 export const ISSUES_BY_IDS_QUERY = /* GraphQL */ `
   query IssuesByIds($ids: [ID!]!) {
-    nodes(ids: $ids) {
-      ... on Issue {
+    issues(filter: { id: { in: $ids } }) {
+      nodes {
         id
         identifier
         state {

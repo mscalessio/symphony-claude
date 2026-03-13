@@ -37,7 +37,7 @@ export function spawnSshClaudeTurn(opts: SshTurnOpts): Promise<TurnResult> {
       });
     }
 
-    const args: string[] = ["-p", "--output-format", "stream-json", "--cwd", cwd];
+    const args: string[] = ["-p", "--output-format", "stream-json"];
 
     if (permissionMode === "bypassPermissions") {
       args.push("--dangerously-skip-permissions");
@@ -47,10 +47,10 @@ export function spawnSshClaudeTurn(opts: SshTurnOpts): Promise<TurnResult> {
 
     if (sessionId) args.push("--resume", sessionId);
     if (model) args.push("--model", model);
-    args.push("--max-turns", "0");
 
     // Use stdin for prompt to avoid arg length issues over SSH
-    const remoteCmd = `${command} ${args.map(shellEscape).join(" ")}`;
+    // cd into the workspace on the remote host before running claude
+    const remoteCmd = `cd ${shellEscape(cwd)} && ${command} ${args.map(shellEscape).join(" ")}`;
     const sshArgs = [host, "--", "bash", "-lc", remoteCmd];
 
     logger.debug({ host, remoteCmd: remoteCmd.slice(0, 500) }, "Spawning SSH claude turn");

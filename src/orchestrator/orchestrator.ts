@@ -205,6 +205,11 @@ export class Orchestrator {
         return;
       }
 
+      this.logger.info(
+        { candidates: issues.length, running: this.state.running.size, claimed: this.state.claimed.size },
+        "Tick: fetched candidates"
+      );
+
       // 4. Sort for dispatch
       const sorted = sortForDispatch(issues);
 

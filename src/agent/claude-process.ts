@@ -3,8 +3,6 @@ import type pino from "pino";
 import type { ClaudeStreamEvent, TurnResult } from "../types.js";
 import { createStreamParser, extractSessionId, extractUsage, isSuccessResult } from "./stream-parser.js";
 
-const MAX_PROMPT_ARG_LENGTH = 100_000; // Use stdin for prompts longer than this
-
 export interface SpawnClaudeTurnOpts {
   prompt: string;
   cwd: string;
@@ -32,10 +30,9 @@ export function spawnClaudeTurn(opts: SpawnClaudeTurnOpts): Promise<TurnResult> 
       return reject(new Error("Aborted before spawn"));
     }
 
-    const useStdin = prompt.length > MAX_PROMPT_ARG_LENGTH;
-
-    const args: string[] = ["-p", "--output-format", "stream-json"];
-    args.push("--cwd", cwd);
+    // Always pass the prompt via stdin to avoid Claude CLI treating
+    // positional args as file paths when --mcp-config is present.
+    const args: string[] = ["-p", "--verbose", "--output-format", "stream-json"];
 
     if (permissionMode === "bypassPermissions") {
       args.push("--dangerously-skip-permissions");
@@ -51,11 +48,6 @@ export function spawnClaudeTurn(opts: SpawnClaudeTurnOpts): Promise<TurnResult> 
     }
     if (mcpConfigPath) {
       args.push("--mcp-config", mcpConfigPath);
-    }
-    args.push("--max-turns", "0");
-
-    if (!useStdin) {
-      args.push(prompt);
     }
 
     const shellCmd = `${command} ${args.map(shellEscape).join(" ")}`;
@@ -163,11 +155,9 @@ export function spawnClaudeTurn(opts: SpawnClaudeTurnOpts): Promise<TurnResult> 
       });
     }
 
-    // Write prompt to stdin for long prompts
-    if (useStdin && child.stdin) {
+    // Write prompt to stdin
+    if (child.stdin) {
       child.stdin.write(prompt);
-      child.stdin.end();
-    } else if (child.stdin) {
       child.stdin.end();
     }
 

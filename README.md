@@ -12,7 +12,7 @@ Symphony Claude is a long-running service that:
 4. **Streams structured JSON events** from the claude process, tracking turns, usage, session IDs, and stall detection.
 5. **Runs multi-turn sessions** until the issue reaches a terminal state, max turns are exhausted, or an error occurs — resuming sessions via `--resume <session_id>` for continuity.
 
-The orchestrator manages concurrency, exponential-backoff retries, workspace lifecycle hooks, hot-reloading of the `WORKFLOW.md` config, and an optional web dashboard.
+The orchestrator manages concurrency, exponential-backoff retries, workspace lifecycle hooks, hot-reloading of the `WORKFLOW.md` config, a terminal TUI dashboard, and an optional web dashboard.
 
 ## How to Use It
 
@@ -158,6 +158,8 @@ Arguments:
 
 Options:
   -p, --port <port>     HTTP server port (overrides server.port in workflow)
+  --no-tui              Disable terminal dashboard (logs go to stdout as before)
+  --log-file <path>     Log file path when TUI is active (default: "symphony.log")
   -V, --version         Output version number
   -h, --help            Display help
 ```
@@ -173,6 +175,18 @@ tracker:
 workspace:
   root: ~/symphony-workspaces
 ```
+
+## Terminal Dashboard (TUI)
+
+When running on a TTY, Symphony displays a full-screen terminal dashboard using ANSI escape codes (no external TUI library). It shows:
+
+- Running agent count, throughput, runtime, and token usage
+- A live table of running agents with identifier, state, PID, turn number, tokens, session ID, and last event
+- The backoff retry queue
+
+The TUI refreshes every second in an alternate screen buffer (like vim/htop — does not pollute scrollback). When TUI is active, logs are redirected to a file (`symphony.log` by default, configurable via `--log-file`).
+
+The TUI auto-disables when stdout is not a TTY (e.g., piped output). Use `--no-tui` to disable it explicitly and keep logs on stdout.
 
 ## Web Dashboard
 
@@ -217,6 +231,10 @@ src/
 │   ├── dispatcher.ts           # Issue → worker dispatch logic
 │   ├── reconciler.ts           # State reconciliation (terminal detection)
 │   └── retry.ts                # Exponential backoff retry logic
+├── tui/
+│   ├── event-description.ts    # ClaudeStreamEvent → short description
+│   ├── renderer.ts             # Pure rendering functions (ANSI)
+│   └── screen.ts               # Terminal driver (alt screen, timer)
 ├── server/
 │   ├── http-server.ts          # Fastify server setup
 │   ├── api.ts                  # REST API routes
@@ -236,7 +254,7 @@ npm run test:watch    # Watch mode
 npm run typecheck     # TypeScript type checking
 ```
 
-The test suite covers 111 tests across all modules — workflow parsing, config resolution/validation, prompt rendering, stream parsing, orchestrator state management, retry logic, workspace management, and MCP server behavior.
+The test suite covers 144 tests across all modules — workflow parsing, config resolution/validation, prompt rendering, stream parsing, orchestrator state management, retry logic, workspace management, TUI rendering, event description mapping, and MCP server behavior.
 
 ## Design Rationale
 
