@@ -19,11 +19,14 @@ export function normalizeIssue(raw: Record<string, any>): Issue {
 
 /**
  * Normalize inverse "blocks" relations into BlockerRef entries.
+ * Filters to only include relations of type "blocks".
  */
 function normalizeBlockers(relations: any[]): BlockerRef[] {
-  return relations.map((r: any) => ({
-    id: r.issue.id,
-    identifier: r.issue.identifier,
-    state: r.issue.state?.name ?? "Unknown",
-  }));
+  return relations
+    .filter((r: any) => r.type === "blocks")
+    .map((r: any) => ({
+      id: r.issue.id,
+      identifier: r.issue.identifier,
+      state: r.issue.state?.name ?? "Unknown",
+    }));
 }

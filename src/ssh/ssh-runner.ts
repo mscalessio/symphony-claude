@@ -14,6 +14,7 @@ export interface SshTurnOpts {
   turnTimeoutMs: number;
   command: string;
   onEvent: (event: ClaudeStreamEvent) => void;
+  onPid?: (pid: number) => void;
   logger: pino.Logger;
 }
 
@@ -57,6 +58,10 @@ export function spawnSshClaudeTurn(opts: SshTurnOpts): Promise<TurnResult> {
     const child = spawn("ssh", sshArgs, {
       stdio: ["pipe", "pipe", "pipe"],
     });
+
+    if (child.pid != null) {
+      opts.onPid?.(child.pid);
+    }
 
     let resultEvent: ClaudeStreamEvent | null = null;
     let detectedSessionId: string | null = sessionId ?? null;

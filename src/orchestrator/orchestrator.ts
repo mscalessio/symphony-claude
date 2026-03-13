@@ -9,6 +9,7 @@ import {
   queueNormalRetry, queueAbnormalRetry, cancelExistingRetry,
   releaseClaim, cancelAllRetries,
 } from "./retry.js";
+import { describeEvent } from "../tui/event-description.js";
 import { validateConfig } from "../config/validator.js";
 import { WorkspaceManager } from "../workspace/manager.js";
 import { runWorker } from "../agent/runner.js";
@@ -46,6 +47,7 @@ export class Orchestrator {
       completed: new Set(),
       codex_totals: { input_tokens: 0, output_tokens: 0, total_tokens: 0, seconds_running: 0 },
       codex_rate_limits: null,
+      started_at: Date.now(),
     };
 
     this.workspaceManager = new WorkspaceManager(
@@ -241,6 +243,10 @@ export class Orchestrator {
       ssh_host: null,
       session_id: null,
       attempt: 1,
+      pid: null,
+      turn: 0,
+      tokens: 0,
+      last_event_text: null,
     };
 
     // Check if there's a retry entry to get attempt number
@@ -267,15 +273,27 @@ export class Orchestrator {
       workspaceManager: this.workspaceManager,
       abortController,
       callback: (update) => {
-        // Update stall timestamp
+        const running = this.state.running.get(issue.id);
+        if (!running) return;
+
         if (update.type === "stall_timestamp") {
-          const running = this.state.running.get(issue.id);
-          if (running) running.last_codex_timestamp = update.timestamp;
+          running.last_codex_timestamp = update.timestamp;
         }
-        // Update session ID
         if (update.type === "session_id") {
-          const running = this.state.running.get(issue.id);
-          if (running) running.session_id = update.session_id;
+          running.session_id = update.session_id;
+        }
+        if (update.type === "pid") {
+          running.pid = update.pid;
+        }
+        if (update.type === "turn_start") {
+          running.turn = update.turn;
+        }
+        if (update.type === "event") {
+          running.last_event_text = describeEvent(update.event);
+          if (update.event.type === "assistant" && update.event.message?.usage) {
+            running.tokens += update.event.message.usage.input_tokens
+                           + update.event.message.usage.output_tokens;
+          }
         }
       },
       logger: this.logger.child({ issue_id: issue.id, issue_identifier: issue.identifier }),

@@ -34,8 +34,9 @@ export const CANDIDATE_ISSUES_QUERY = /* GraphQL */ `
             name
           }
         }
-        inverseRelations(type: "blocks") {
+        inverseRelations {
           nodes {
+            type
             issue {
               id
               identifier

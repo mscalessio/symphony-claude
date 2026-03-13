@@ -74,15 +74,19 @@ export function renderDashboard(state: OrchestratorState, config: WorkflowConfig
 <h2>Running Sessions</h2>
 ${running.length === 0 ? '<p class="empty">No running sessions</p>' : `
 <table>
-  <thead><tr><th>Identifier</th><th>State</th><th>Attempt</th><th>Started</th><th>Last Activity</th><th>Host</th></tr></thead>
+  <thead><tr><th>Identifier</th><th>State</th><th>PID</th><th>Turn</th><th>Tokens</th><th>Attempt</th><th>Started</th><th>Last Activity</th><th>Host</th><th>Event</th></tr></thead>
   <tbody>
     ${running.map(r => `<tr>
       <td>${esc(r.identifier)}</td>
       <td><span class="badge badge-green">${esc(r.state)}</span></td>
+      <td>${r.pid ?? "—"}</td>
+      <td>${r.turn}</td>
+      <td>${formatNumber(r.tokens)}</td>
       <td>${r.attempt}</td>
       <td>${formatAge(r.started_at)}</td>
       <td>${r.last_codex_timestamp ? formatAge(r.last_codex_timestamp) : "—"}</td>
       <td>${r.ssh_host ? esc(r.ssh_host) : "local"}</td>
+      <td>${r.last_event_text ? esc(r.last_event_text) : "—"}</td>
     </tr>`).join("")}
   </tbody>
 </table>`}

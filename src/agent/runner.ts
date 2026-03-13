@@ -84,6 +84,7 @@ export async function runWorker(opts: RunWorkerOpts): Promise<WorkerResult> {
       }
 
       turnNumber++;
+      callback({ type: "turn_start", turn: turnNumber });
 
       // Build prompt
       let prompt: string;
@@ -106,6 +107,7 @@ export async function runWorker(opts: RunWorkerOpts): Promise<WorkerResult> {
         abortSignal: abortController.signal,
         turnTimeoutMs: config.codex.turn_timeout_ms,
         command: config.codex.command,
+        onPid: (pid) => callback({ type: "pid", pid }),
         onEvent: (event) => {
           callback(createStallUpdate());
           callback({ type: "event", event });

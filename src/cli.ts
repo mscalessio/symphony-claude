@@ -3,6 +3,8 @@ import { Command } from "commander";
 export interface CliArgs {
   workflowPath: string;
   port: number | null;
+  tui: boolean;
+  logFile: string;
 }
 
 export function parseCli(argv: string[]): CliArgs {
@@ -14,6 +16,8 @@ export function parseCli(argv: string[]): CliArgs {
     .version("0.0.1")
     .argument("[workflow]", "Path to WORKFLOW.md file", "./WORKFLOW.md")
     .option("-p, --port <port>", "HTTP server port (overrides server.port in workflow)")
+    .option("--no-tui", "Disable terminal dashboard (logs go to stdout)")
+    .option("--log-file <path>", "Log file path when TUI is active", "symphony.log")
     .parse(argv);
 
   const workflowPath = program.args[0] ?? "./WORKFLOW.md";
@@ -25,5 +29,10 @@ export function parseCli(argv: string[]): CliArgs {
     process.exit(1);
   }
 
-  return { workflowPath, port };
+  return {
+    workflowPath,
+    port,
+    tui: opts.tui !== false,
+    logFile: opts.logFile ?? "symphony.log",
+  };
 }

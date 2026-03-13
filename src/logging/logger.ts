@@ -25,7 +25,20 @@ const REDACTED_PATHS = [
  * - In production: structured JSON, no colour, no fancy formatting.
  * - In development: uses pino-pretty for human-readable output.
  */
-export function createLogger(name = "symphony"): pino.Logger {
+export function createLogger(name = "symphony", logFile?: string): pino.Logger {
+  if (logFile) {
+    // When a log file is specified (e.g. TUI mode), write structured JSON
+    // to the file instead of stdout to avoid corrupting terminal output.
+    return pino({
+      name,
+      level: LOG_LEVEL,
+      redact: {
+        paths: REDACTED_PATHS,
+        censor: "[REDACTED]",
+      },
+    }, pino.destination(logFile));
+  }
+
   const transport: pino.TransportSingleOptions | undefined = IS_PRODUCTION
     ? undefined
     : {

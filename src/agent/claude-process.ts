@@ -16,6 +16,7 @@ export interface SpawnClaudeTurnOpts {
   turnTimeoutMs: number;
   command: string;
   onEvent: (event: ClaudeStreamEvent) => void;
+  onPid?: (pid: number) => void;
   logger: pino.Logger;
 }
 
@@ -70,6 +71,10 @@ export function spawnClaudeTurn(opts: SpawnClaudeTurnOpts): Promise<TurnResult> 
       });
     } catch (err) {
       return reject(new Error(`Failed to spawn claude process: ${err}`));
+    }
+
+    if (child.pid != null) {
+      opts.onPid?.(child.pid);
     }
 
     let resultEvent: ClaudeStreamEvent | null = null;

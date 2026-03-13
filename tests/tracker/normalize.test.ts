@@ -131,6 +131,7 @@ describe("normalizeIssue", () => {
       inverseRelations: {
         nodes: [
           {
+            type: "blocks",
             issue: {
               id: "blocker-1",
               identifier: "PROJ-10",
@@ -138,6 +139,7 @@ describe("normalizeIssue", () => {
             },
           },
           {
+            type: "blocks",
             issue: {
               id: "blocker-2",
               identifier: "PROJ-11",
@@ -169,6 +171,7 @@ describe("normalizeIssue", () => {
       inverseRelations: {
         nodes: [
           {
+            type: "blocks",
             issue: {
               id: "blocker-1",
               identifier: "PROJ-10",

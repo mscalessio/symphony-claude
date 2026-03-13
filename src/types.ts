@@ -92,6 +92,10 @@ export interface RunningEntry {
   ssh_host: string | null;
   session_id: string | null;
   attempt: number;
+  pid: number | null;
+  turn: number;
+  tokens: number;
+  last_event_text: string | null;
 }
 
 export interface RetryEntry {
@@ -112,6 +116,7 @@ export interface OrchestratorState {
   completed: Set<string>;
   codex_totals: CodexTotals;
   codex_rate_limits: Record<string, unknown> | null;
+  started_at: number;
 }
 
 export interface CodexTotals {
@@ -208,7 +213,9 @@ export type WorkerUpdate =
   | { type: "event"; event: ClaudeStreamEvent }
   | { type: "turn_complete"; turn: number; result: TurnResult }
   | { type: "session_id"; session_id: string }
-  | { type: "stall_timestamp"; timestamp: number };
+  | { type: "stall_timestamp"; timestamp: number }
+  | { type: "pid"; pid: number }
+  | { type: "turn_start"; turn: number };
 
 // ─── Tracker Adapter Interface ───
 

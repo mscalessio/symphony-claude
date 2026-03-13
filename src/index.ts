@@ -10,6 +10,7 @@ import { WorkflowWatcher } from "./workflow/watcher.js";
 import { LinearClient } from "./tracker/linear/client.js";
 import { Orchestrator } from "./orchestrator/orchestrator.js";
 import { HttpServer } from "./server/http-server.js";
+import { TerminalDashboard } from "./tui/screen.js";
 
 async function main(): Promise<void> {
   // 1. Parse CLI args
@@ -23,7 +24,11 @@ async function main(): Promise<void> {
   const resolvedConfig = resolveConfig(workflow.config);
 
   // 4. Configure logging
-  const logger = createLogger("symphony");
+  // When TUI is active on a TTY, redirect logs to file to avoid corrupting the display
+  const tuiActive = args.tui && process.stdout.isTTY;
+  const logger = tuiActive
+    ? createLogger("symphony", args.logFile)
+    : createLogger("symphony");
 
   // 5. Validate dispatch config
   const validation = validateConfig(resolvedConfig);
@@ -56,7 +61,18 @@ async function main(): Promise<void> {
     logger: logger.child({ component: "orchestrator" }),
   });
 
-  // 8. Start workflow file watcher
+  // 8. Start TUI if enabled and on a TTY
+  let tui: TerminalDashboard | null = null;
+  if (tuiActive) {
+    tui = new TerminalDashboard({
+      getState: () => orchestrator.getState(),
+      getConfig: () => orchestrator.getConfig(),
+      projectSlug: resolvedConfig.tracker.project_slug,
+    });
+    tui.start();
+  }
+
+  // 9. Start workflow file watcher
   const watcher = new WorkflowWatcher(
     workflowPath,
     (updated) => {
@@ -76,7 +92,7 @@ async function main(): Promise<void> {
   );
   watcher.start();
 
-  // 9. Start HTTP server if configured
+  // 10. Start HTTP server if configured
   let httpServer: HttpServer | null = null;
   const serverPort = args.port ?? resolvedConfig.server.port;
   if (serverPort !== null) {
@@ -89,14 +105,17 @@ async function main(): Promise<void> {
     logger.info({ address }, "HTTP server started");
   }
 
-  // 10. Start orchestrator
+  // 11. Start orchestrator
   await orchestrator.start();
 
-  // 11. Graceful shutdown
+  // 12. Graceful shutdown
   let shutdownInProgress = false;
   const shutdown = async (signal: string) => {
     if (shutdownInProgress) return;
     shutdownInProgress = true;
+
+    // Stop TUI first to restore terminal before any log output
+    tui?.stop();
 
     logger.info({ signal }, "Shutdown signal received");
 
